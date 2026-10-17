@@ -5,13 +5,7 @@ import joblib
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
-    f1_score,
-    precision_score,
-    recall_score,
-)
+from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -23,36 +17,28 @@ MODEL_DIR = Path("models")
 
 def main():
     if not DATA_PATH.exists():
-        print("Dataset not found!")
+        print("Dataset not found.")
         print("Download creditcard.csv from the Kaggle link in README.md")
-        print("and place it inside the data folder.")
+        print("and put it inside the data folder.")
         return
 
     data = pd.read_csv(DATA_PATH)
-
     if "Class" not in data.columns:
-        raise ValueError("The dataset must contain a 'Class' column.")
+        raise ValueError("The dataset must have a 'Class' column.")
 
-    # Class is the answer we want the model to learn.
     X = data.drop(columns=["Class"])
     y = data["Class"]
 
-    # Keep some transactions aside for testing the trained models.
+    # Stratify keeps the rare fraud cases represented in both sets.
     X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42,
-        stratify=y,
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
 
     models = {
         "Logistic Regression": Pipeline([
             ("scaler", StandardScaler()),
             ("model", LogisticRegression(
-                max_iter=1000,
-                class_weight="balanced",
-                random_state=42,
+                max_iter=1000, class_weight="balanced", random_state=42
             )),
         ]),
         "Random Forest": RandomForestClassifier(
@@ -65,7 +51,7 @@ def main():
 
     results = {}
     best_model = None
-    best_name = None
+    best_name = ""
     best_f1 = -1
 
     for name, model in models.items():
@@ -81,15 +67,7 @@ def main():
             "precision": float(precision),
             "recall": float(recall),
             "f1_score": float(f1),
-            "confusion_matrix": confusion_matrix(
-                y_test, predictions
-            ).tolist(),
-            "classification_report": classification_report(
-                y_test,
-                predictions,
-                output_dict=True,
-                zero_division=0,
-            ),
+            "confusion_matrix": confusion_matrix(y_test, predictions).tolist(),
         }
 
         print(f"Precision: {precision:.4f}")
@@ -102,8 +80,6 @@ def main():
             best_name = name
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Save the best model and the exact feature names it expects.
     joblib.dump(
         {"model": best_model, "features": list(X.columns), "name": best_name},
         MODEL_DIR / "fraud_model.pkl",
@@ -113,7 +89,7 @@ def main():
         json.dump(results, file, indent=2)
 
     print(f"\nBest model by F1-score: {best_name}")
-    print(f"Saved model and results in: {MODEL_DIR}")
+    print("Saved the model and metrics in the models folder.")
 
 
 if __name__ == "__main__":
