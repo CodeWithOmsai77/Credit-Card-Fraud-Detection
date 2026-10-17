@@ -3,5 +3,4 @@ __pycache__/
 *.py[cod]
 data/
 models/
-.streamlit/
 .DS_Store
