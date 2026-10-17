@@ -9,12 +9,12 @@ MODEL_PATH = Path("models/fraud_model.pkl")
 
 app = FastAPI(
     title="Credit Card Fraud Detection API",
-    description="Beginner-friendly API for predicting whether a transaction may be fraudulent.",
+    description="A small API for the beginner-friendly fraud detection project.",
     version="1.0.0",
 )
 
 
-def load_model():
+def get_saved_model():
     if not MODEL_PATH.exists():
         raise HTTPException(
             status_code=503,
@@ -34,14 +34,17 @@ def home():
 
 @app.post("/predict")
 def predict(transaction: dict):
-    saved = load_model()
+    saved = get_saved_model()
     features = saved["features"]
 
     missing = [feature for feature in features if feature not in transaction]
     if missing:
         raise HTTPException(
             status_code=400,
-            detail={"message": "Missing required transaction features.", "missing": missing},
+            detail={
+                "message": "Missing required transaction features.",
+                "missing": missing,
+            },
         )
 
     try:
@@ -57,7 +60,6 @@ def predict(transaction: dict):
 
     model = saved["model"]
     prediction = int(model.predict(row)[0])
-
     probability = None
     if hasattr(model, "predict_proba"):
         probability = float(model.predict_proba(row)[0][1])
@@ -67,5 +69,5 @@ def predict(transaction: dict):
         "label": "Potential fraud" if prediction == 1 else "Likely normal",
         "fraud_probability": probability,
         "model": saved["name"],
-        "note": "Educational prediction only; not suitable for real payment decisions.",
+        "note": "Educational prediction only; not for real payment decisions.",
     }
