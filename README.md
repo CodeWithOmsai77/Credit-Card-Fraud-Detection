@@ -121,6 +121,29 @@ Then open **http://127.0.0.1:8000/docs** to explore and test the API.
 
 The `POST /predict` endpoint accepts numeric transaction features (`Time`, `V1`–`V28`, and `Amount`) and returns a prediction, label, and estimated fraud probability. If the model has not been trained yet, train it first.
 
+### API behavior
+
+- `GET /` returns the API name, documentation path, and prediction endpoint.
+- `POST /predict` requires all 30 numeric feature fields; extra fields are ignored because the API selects the saved model's feature list.
+- A missing feature or non-numeric value returns **HTTP 400** with an error detail.
+- If `models/fraud_model.pkl` does not exist, prediction returns **HTTP 503** and instructs you to train the model first.
+- A successful response includes `prediction` (`0` or `1`), a human-readable `label`, `fraud_probability` when supported by the selected model, and the selected model name.
+
+Example request shape (send all required feature fields):
+
+```json
+{
+  "Time": 0,
+  "V1": 0,
+  "V2": 0,
+  "...": "include V3 through V28 as numeric values",
+  "V28": 0,
+  "Amount": 10.5
+}
+```
+
+The abbreviated example shows the field pattern only; it is not a complete valid request because the API requires every feature from `Time`, `V1` through `V28`, and `Amount`.
+
 ## 📈 How model performance is evaluated
 
 Fraud data is imbalanced: there are far fewer fraudulent transactions than normal ones. For that reason, this project reports more than accuracy:
